@@ -1,5 +1,5 @@
-## Student Name:
-## Student ID: 
+## Student Name: Daksh Dave 
+## Student ID: 219241983
 
 """
 Public test suite for the meeting slot suggestion exercise.
@@ -64,3 +64,16 @@ def test_lunch_break_blocks_all_slots_during_lunch():
     assert "12:45" not in slots
 
 """TODO: Add at least 5 additional test cases to test your implementation."""
+
+
+def test_add1():
+    """
+    Functional requirement:
+    Slots overlapping an event must not be suggested.
+    """
+    events = [{"start": "10:00", "end": "11:00"}]
+    slots = suggest_slots(events, meeting_duration=50, day="2026-02-01")
+
+    assert "10:00" not in slots
+    assert "10:30" not in slots
+    assert "11:15" in slots
