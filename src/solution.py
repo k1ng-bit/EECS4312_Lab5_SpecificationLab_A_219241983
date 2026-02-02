@@ -1,5 +1,5 @@
-## Student Name:
-## Student ID: 
+## Student Name: Daksh Dave
+## Student ID: 219241983
 
 """
 Stub file for the meeting slot suggestion exercise.
@@ -15,6 +15,15 @@ def suggest_slots(
     meeting_duration: int,
     day: str
 ) -> List[str]:
+    
+    """implementing variables for the function"""
+
+    work_start = 9 * 60
+    work_end = 17*60
+    lunch_start = 12 * 60
+    lunch_end = 13 * 60
+    slot_step = 15
+
     """
     Suggest possible meeting start times for a given day.
 
@@ -27,4 +36,6 @@ def suggest_slots(
         List of valid start times as "HH:MM" sorted ascending
     """
     # TODO: Implement this function
+    
+
     raise NotImplementedError("suggest_slots function has not been implemented yet")
