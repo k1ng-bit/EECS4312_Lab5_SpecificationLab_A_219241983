@@ -10,6 +10,18 @@ for full requirements.
 """
 from typing import List, Dict
 
+
+# Helper Functions needed for the final suggest_slots() function
+def toMin(hhmm: str) -> int:
+    #split the hhmm string to hours and mins
+    hours, minutes = hhmm.split(":")    # split by : char
+    return int(hours) * 60 + int(minutes)
+
+def toHHMM(mins: int) -> str:
+    hours = mins // 60 
+    minutes = mins % 60
+    return f"{hours:02d}:{minutes:02d}"
+
 def suggest_slots(
     events: List[Dict[str, str]],
     meeting_duration: int,
@@ -17,13 +29,22 @@ def suggest_slots(
 ) -> List[str]:
     
     """implementing variables for the function"""
+    
+    work_hour_start = toMin("9:00")
+    work_hour_end = toMin("17:00")
+    lunch_start = toMin("12:00")
+    lunch_end = toMin("13:00")
+    
+    increment = 15      # time slots increment by 15 minutes. 
+    buffer = 15         # buffer time after an event is completed
 
-    work_start = 9 * 60
-    work_end = 17*60
-    lunch_start = 12 * 60
-    lunch_end = 13 * 60
-    slot_step = 15
+    blocked = []        # list containing time slots that cannot be assigned
+    blocked.append((lunch_start, lunch_end)) #cannot assign lunch times for meeting
 
+
+    if meeting_duration<=0:     #if no meeting, then no need for available time slots
+        return []
+    
     """
     Suggest possible meeting start times for a given day.
 
@@ -37,5 +58,55 @@ def suggest_slots(
     """
     # TODO: Implement this function
     
+    for ev in events:
 
-    raise NotImplementedError("suggest_slots function has not been implemented yet")
+        event_start = toMin(ev["start"])
+        event_end = toMin(ev["end"])
+        
+        if event_end <= event_start:
+            continue
+        
+        if event_end <= work_hour_start or event_start >= work_hour_end:
+            continue
+
+        event_start = max(event_start, work_hour_start)
+        event_end = min(event_end, work_hour_end)
+        
+        event_end = min(event_end + buffer, work_hour_end)
+
+        blocked.append((event_start, event_end))
+    
+    blocked.sort()
+    
+    merged = []     #merged to get rid of any overlaps
+
+    for s, e in blocked:
+        if not merged or s > merged[-1][1]:
+            merged.append([s, e])
+        else:
+            merged[-1][1] = max(merged[-1][1], e)
+
+    def overlaps_any(s: int, e: int) -> bool:
+        for bs, be in merged:
+            if s < be and e > bs:
+                return True
+        return False
+
+    latest_start = work_hour_end - meeting_duration
+    if latest_start < work_hour_start:
+        return []
+
+    available_times = []
+
+    t = work_hour_start
+    while t <= latest_start:
+        # Lunch rule: block STARTS during lunch (not overlaps)
+        if not (lunch_start <= t < lunch_end):
+            end = t + meeting_duration
+            if not overlaps_any(t, end):
+                available_times.append(toHHMM(t))
+        t += increment
+
+    return available_times
+
+    #raise NotImplementedError("suggest_slots function has not been implemented yet")
