@@ -550,3 +550,166 @@ That’s **exactly** what your loop is doing.
 If you understand that sentence, you understand the solution.
 
 ---
+
+
+Prompt : new requirment to the s[ecification is that any meetings after 15.00 on a Friday is not allowed
+LLM Response:
+
+Good — this is a **new constraint**, so treat it exactly like a requirements change. I’ll walk you through it cleanly, the same way a requirements engineer would.
+
+---
+
+## New requirement (clearly stated)
+
+> **Any meeting that starts at or after 15:00 on a Friday is not allowed.**
+
+Key points hidden in that sentence (these matter):
+
+* It applies **only on Fridays**
+* It restricts **start times**, not end times
+* “After 15:00” is ambiguous, so you must choose an interpretation
+  The safe, conservative interpretation is:
+
+  > ❌ start time **≥ 15:00** is not allowed
+  > ✅ start time **< 15:00** is allowed
+
+This matches how lunch was handled.
+
+---
+
+## How this fits into your existing invariants
+
+Add **one new invariant**:
+
+### 10) Friday afternoon constraint
+
+**Invariant:**
+
+> If the given day is a Friday, all suggested start times must satisfy
+> `start_time < 15:00`
+
+This invariant is:
+
+* conditional (depends on `day`)
+* independent of other constraints
+* easy to test in isolation
+
+---
+
+## Step 1: Decide how to detect “Friday”
+
+Your current function gets:
+
+```python
+day: str  # e.g., "2026-02-01"
+```
+
+That’s a **date**, not `"Fri"`.
+
+Correct approach (and totally acceptable in this lab):
+
+* Parse the date
+* Check weekday
+
+Python gives this for free.
+
+---
+
+## Step 2: Minimal code change (conceptual, not copy-paste heavy)
+
+Inside `suggest_slots`, after you compute candidate `t`:
+
+**Logic you add conceptually:**
+
+```text
+IF day is Friday AND t >= 15:00:
+    skip this slot
+```
+
+That’s it.
+You do **not** modify:
+
+* event logic
+* lunch logic
+* buffers
+* merging
+
+This is how real specs evolve.
+
+---
+
+## Step 3: Tests you MUST add (at least 2)
+
+You should add **Friday-specific tests** to your extra tests file.
+
+### Test 1: Friday blocks late starts
+
+```python
+def test_friday_afternoon_meetings_not_allowed():
+    # 2026-02-06 is a Friday
+    slots = suggest_slots([], meeting_duration=30, day="2026-02-06")
+
+    assert "14:45" in slots
+    assert "15:00" not in slots
+    assert "15:15" not in slots
+```
+
+### Test 2: Non-Friday is unaffected
+
+```python
+def test_non_friday_allows_afternoon_meetings():
+    # 2026-02-05 is a Thursday
+    slots = suggest_slots([], meeting_duration=30, day="2026-02-05")
+
+    assert "15:00" in slots
+    assert "16:00" in slots
+```
+
+These two tests prove:
+
+* the constraint is conditional
+* you didn’t break existing behavior
+
+---
+
+## Step 4: Update your invariants list (final version)
+
+Add this bullet:
+
+> **Friday constraint:** If the specified day is a Friday, the function must not return any meeting start times at or after 15:00.
+
+That’s enough. No need to rewrite everything else.
+
+---
+
+## Step 5: What to write in your AI transcript (VERY important)
+
+This is an *ideal* transcript entry:
+
+**Prompt:**
+
+> A new requirement states that meetings after 15:00 on Fridays are not allowed. How should this be incorporated without breaking existing constraints?
+
+**LLM Response:**
+
+> The restriction should be applied only when the day is Friday and should filter out candidate start times ≥ 15:00, without modifying event overlap or lunch logic.
+
+**My understanding / what I did:**
+
+* I treated this as a conditional invariant that applies only on Fridays.
+* I filtered candidate start times ≥ 15:00 when the given date is a Friday.
+* I added tests to ensure the restriction does not affect other weekdays.
+
+This shows **controlled evolution of the specification**.
+
+---
+
+## Final sanity checklist after adding this
+
+* ✅ All old tests still pass
+* ✅ New Friday tests pass
+* ✅ No hard-coding of dates
+* ✅ Constraint applied only to start times
+
+If you want, paste your updated `suggest_slots` and I’ll review it **only for the Friday logic**, to make sure it’s minimal and correct (no overreach).
+
