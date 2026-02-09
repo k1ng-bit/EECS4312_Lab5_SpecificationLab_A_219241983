@@ -22,6 +22,19 @@ def toHHMM(mins: int) -> str:
     minutes = mins % 60
     return f"{hours:02d}:{minutes:02d}"
 
+def isFri(day:str)->bool:
+    d = day.strip().lower
+
+    if d.startsWith("fri"):
+        return true
+    try:
+        y, m, dd = day.split("-")
+        return date(int(y), int(m), int(dd)).weekday() == 4  # Fri
+    except Exception:
+        return False
+
+
+
 def suggest_slots(
     events: List[Dict[str, str]],
     meeting_duration: int,
@@ -34,6 +47,8 @@ def suggest_slots(
     work_hour_end = toMin("17:00")
     lunch_start = toMin("12:00")
     lunch_end = toMin("13:00")
+    Fri_end = toMin("15:00")
+    friday = isFri(day)
     
     increment = 15      # time slots increment by 15 minutes. 
     buffer = 15         # buffer time after an event is completed
@@ -106,6 +121,10 @@ def suggest_slots(
             if not overlaps_any(t, end):
                 available_times.append(toHHMM(t))
         t += increment
+
+        if friday and t>= Fri_end:
+            t+= increment
+            continue
 
     return available_times
 
