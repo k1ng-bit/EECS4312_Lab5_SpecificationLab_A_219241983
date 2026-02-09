@@ -18,7 +18,7 @@ def test_single_event_blocks_overlapping_slots():
     Slots overlapping an event must not be suggested.
     """
     events = [{"start": "10:00", "end": "11:00"}]
-    slots = suggest_slots(events, meeting_duration=30, day="2026-02-01")
+    slots = suggest_slots(events, meeting_duration=30, day="Mon")
 
     assert "10:00" not in slots
     assert "10:30" not in slots
